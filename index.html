@@ -350,6 +350,11 @@
           <p class="hint">ဒါက browser ထဲမှာ လုပ်တဲ့ <b>အနီးစပ်ဆုံး အသံပြောင်းလဲမှု</b> ပါ — လူတစ်ယောက်နဲ့ အတိအကျတူတဲ့ neural clone မဟုတ်ပါ။ Pitch + Formant + နှုန်း + Brightness ကို ပေါင်းပြောင်းပေးပါတယ်။ Preset ရွေးတာနဲ့ slider တွေ အလိုအလျောက် ညှိသွားပါမယ်၊ ကိုယ်တိုင် ပြန်ညှိလို့လည်း ရပါတယ်။</p>
           <label class="field" for="fxSource">အသုံးပြုမည့် အသံ (မူရင်း)</label>
           <select id="fxSource"></select>
+          <div class="btn-row" style="margin-top:10px">
+            <button class="btn" id="fxImportBtn" type="button">📂 ဒေါင်းလုဒ်ဆွဲထားတဲ့ အသံဖိုင် ထည့်မည်</button>
+            <input type="file" id="fxFileInput" accept="audio/*" class="hidden" />
+          </div>
+          <p class="field-note">မိုက်နဲ့ ဖမ်းထားတာ မရှိရင် ဖုန်းထဲမှာ ဒေါင်းလုဒ်ဆွဲထားတဲ့ အသံဖိုင် (MP3 / WAV / M4A စသည်) ကို ရွေးထည့်နိုင်ပါတယ် — ထည့်လိုက်တာနဲ့ အဲဒီဖိုင်ကို မူရင်းအသံအဖြစ် အလိုအလျောက် ရွေးပေးပါမယ်။ ထည့်ထားတဲ့ဖိုင်ဟာ “အသံဖမ်းရန်” အပိုင်းက ဖမ်းထားသော အသံများ စာရင်းမှာလည်း ပေါ်လာပြီး ပရိုဖိုင် ဆန်းစစ်လို့လည်း ရပါတယ်။</p>
 
           <label class="field">Preset အသံပုံစံများ — နှိပ်ပြီး စမ်းပါ</label>
           <div class="preset-grid" id="presetGrid"></div>
@@ -1373,7 +1378,7 @@
       function refreshFxSources() {
         const cur = fxSource.value;
         fxSource.innerHTML = "";
-        if (!takes.length) { fxSource.innerHTML = '<option value="">(အသံ မရှိသေးပါ — အရင် ဖမ်းပါ)</option>'; return; }
+        if (!takes.length) { fxSource.innerHTML = '<option value="">(အသံ မရှိသေးပါ — ဖမ်းပါ / အသံဖိုင် ထည့်ပါ)</option>'; return; }
         takes.forEach((t) => {
           const o = document.createElement("option");
           o.value = t.id; o.textContent = t.name + " (" + fmtTime(t.duration) + ")" + (t.metrics ? " • " + Math.round(t.metrics.medianHz) + " Hz" : "");
@@ -1382,6 +1387,49 @@
         if (takes.some((t) => t.id === cur)) fxSource.value = cur;
       }
       refreshFxSources();
+
+      /* ---- import a downloaded audio file as a source voice ----
+         The file becomes a normal take (same list as mic recordings),
+         so it works everywhere a recording does: FX source, profile
+         analysis, download. It is decoded once up front to get its
+         real duration; a file the browser cannot decode is refused
+         with an honest message instead of a broken entry. */
+      const fxImportBtn = $("#fxImportBtn"), fxFileInput = $("#fxFileInput");
+      if (fxImportBtn && fxFileInput) {
+        fxImportBtn.addEventListener("click", () => fxFileInput.click());
+        fxFileInput.addEventListener("change", async () => {
+          const file = fxFileInput.files && fxFileInput.files[0];
+          fxFileInput.value = "";
+          if (!file) return;
+          hideMsg(fxMsg);
+          fxImportBtn.disabled = true;
+          showMsg(fxMsg, "အသံဖိုင် ဖတ်နေပါတယ်…", "ok");
+          const take = {
+            id: "t" + Date.now(),
+            name: (file.name || "အသံဖိုင်").replace(/\.[A-Za-z0-9]+$/, "") || "အသံဖိုင်",
+            blob: file,
+            url: URL.createObjectURL(file),
+            mime: file.type || "audio/mpeg",
+            duration: 0, buffer: null
+          };
+          try {
+            const buf = await getBuffer(take);
+            take.duration = buf.duration;
+          } catch (e) {
+            URL.revokeObjectURL(take.url);
+            fxImportBtn.disabled = false;
+            showMsg(fxMsg, "ဒီအသံဖိုင်ကို ဖတ်လို့ မရပါ။ MP3 / WAV / M4A လို ပုံမှန် အသံဖိုင် အမျိုးအစားနဲ့ ပြန်စမ်းကြည့်ပါ။", "err");
+            return;
+          }
+          takes.unshift(take);
+          renderTakes();
+          refreshFxSources();
+          fxSource.value = take.id;
+          if (fxTargetProfile && fxTargetProfile.value) applyTargetProfile();
+          fxImportBtn.disabled = false;
+          showMsg(fxMsg, "အသံဖိုင် “" + file.name + "” ကို ထည့်ပြီး မူရင်းအသံအဖြစ် ရွေးထားပါပြီ — Preset ရွေးပြီး “ပြောင်းပြီး နားထောင်မည်” နှိပ်ပါ။", "ok");
+        });
+      }
 
       function bufferToWav(buffer) {
         const numCh = Math.min(2, buffer.numberOfChannels);
@@ -1411,7 +1459,7 @@
       $("#fxRenderBtn").addEventListener("click", async () => {
         hideMsg(fxMsg);
         const take = takes.find((t) => t.id === fxSource.value);
-        if (!take) { showMsg(fxMsg, "အရင် အသံတစ်ခု ဖမ်းထားပါ။", "err"); return; }
+        if (!take) { showMsg(fxMsg, "အရင် အသံတစ်ခု ဖမ်းပါ၊ ဒါမှမဟုတ် ဒေါင်းလုဒ်ဆွဲထားတဲ့ အသံဖိုင် ထည့်ပါ။", "err"); return; }
         fxResult.innerHTML = '<div class="empty">ပြောင်းနေပါတယ်… (Pitch + Formant + Brightness + Speed)</div>';
         try {
           const srcBuf = await getBuffer(take);

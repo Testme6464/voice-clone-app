@@ -1,0 +1,1345 @@
+<!doctype html>
+<html lang="my">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Voice Clone App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700;800&family=Archivo:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f1ec;
+        --bg-2: #ece7dd;
+        --surface: #fffdf9;
+        --surface-2: #f7f3ea;
+        --ink: #1d1a16;
+        --ink-soft: #57504a;
+        --ink-faint: #8a8178;
+        --line: #ddd5c7;
+        --accent: #d63a2f;
+        --accent-ink: #ffffff;
+        --accent-soft: #fbe9e6;
+        --teal: #0e7a6d;
+        --teal-soft: #e2f2ef;
+        --amber: #b97a12;
+        --amber-soft: #faf0da;
+        --wave: #d63a2f;
+        --wave-dim: #cbbfa9;
+        --shadow: 0 10px 30px rgba(60, 45, 20, .10);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14120f;
+          --bg-2: #1b1814;
+          --surface: #201c17;
+          --surface-2: #282219;
+          --ink: #f2ede4;
+          --ink-soft: #b8b0a2;
+          --ink-faint: #857c6e;
+          --line: #3a342a;
+          --accent: #ff5a4a;
+          --accent-ink: #1c0d0a;
+          --accent-soft: #3a201c;
+          --teal: #3ec9b6;
+          --teal-soft: #17332f;
+          --amber: #e8b34b;
+          --amber-soft: #372b14;
+          --wave: #ff5a4a;
+          --wave-dim: #4c4436;
+          --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Noto Sans Myanmar", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 20px 16px 64px; }
+
+      /* ---------- header strip ---------- */
+      .masthead {
+        display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between;
+        padding: 10px 2px 18px;
+        border-bottom: 3px solid var(--ink);
+      }
+      .masthead h1 {
+        font-size: clamp(26px, 5vw, 40px); line-height: 1.25; margin: 0; font-weight: 800; letter-spacing: -.01em;
+      }
+      .masthead h1 .en { font-family: "Archivo", sans-serif; font-size: .52em; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+      .masthead p { margin: 6px 0 0; color: var(--ink-soft); max-width: 52ch; font-size: 15px; }
+      .profile-chip {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 10px 14px; min-width: 230px; box-shadow: var(--shadow);
+      }
+      .profile-chip .label { font-size: 12px; color: var(--ink-faint); font-weight: 600; letter-spacing: .04em; }
+      .profile-chip .value { font-weight: 700; font-size: 16px; margin-top: 2px; }
+      .profile-chip .sub { font-size: 13px; color: var(--ink-soft); }
+
+      /* ---------- tabs ---------- */
+      .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 18px; }
+      .tab-btn {
+        font: inherit; font-weight: 600; font-size: 15px; cursor: pointer;
+        background: var(--surface); color: var(--ink-soft);
+        border: 1px solid var(--line); border-radius: 999px; padding: 9px 18px;
+      }
+      .tab-btn[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+      .tab-btn:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+      .panel { display: none; }
+      .panel.active { display: block; }
+
+      .card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 20px; box-shadow: var(--shadow); margin-bottom: 18px;
+      }
+      .card h2 { margin: 0 0 4px; font-size: 20px; font-weight: 800; }
+      .card .hint { color: var(--ink-soft); font-size: 14px; margin: 0 0 14px; }
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+      /* ---------- recorder ---------- */
+      .rec-stage { text-align: center; padding: 8px 0 4px; }
+      canvas.wave { width: 100%; height: 110px; display: block; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+      .rec-timer { font-family: "Archivo", sans-serif; font-variant-numeric: tabular-nums; font-size: 30px; font-weight: 700; margin: 12px 0 2px; }
+      .rec-status { color: var(--ink-soft); font-size: 14px; min-height: 24px; }
+      .rec-status .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: blink 1s steps(2) infinite; vertical-align: middle; }
+      @keyframes blink { 50% { opacity: .15; } }
+      @media (prefers-reduced-motion: reduce) { .rec-status .dot { animation: none; } }
+      .rec-btn {
+        width: 76px; height: 76px; border-radius: 50%; border: none; cursor: pointer; margin-top: 10px;
+        background: var(--accent); color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 20px rgba(214, 58, 47, .35);
+      }
+      .rec-btn svg { width: 30px; height: 30px; fill: currentColor; }
+      .rec-btn.recording { border-radius: 18px; }
+      .sample-script {
+        background: var(--amber-soft); border: 1px dashed var(--amber); border-radius: 10px;
+        padding: 12px 14px; font-size: 15px; text-align: left; margin-top: 16px;
+      }
+      .sample-script .label { font-size: 12px; font-weight: 700; color: var(--amber); letter-spacing: .03em; }
+
+      /* ---------- takes list ---------- */
+      .take {
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: var(--surface-2);
+      }
+      .take .meta { min-width: 0; flex: 1 1 160px; }
+      .take .name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .take .info { font-size: 12.5px; color: var(--ink-soft); }
+      .take audio { flex: 1 1 220px; min-width: 180px; height: 38px; }
+      .badge { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--teal-soft); color: var(--teal); }
+      .empty { color: var(--ink-faint); font-size: 14px; border: 1px dashed var(--line); border-radius: 10px; padding: 18px; text-align: center; }
+
+      /* ---------- buttons & inputs ---------- */
+      .btn {
+        font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; border-radius: 10px;
+        padding: 9px 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+      }
+      .btn:hover { border-color: var(--ink-faint); }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .btn.teal { background: var(--teal); border-color: var(--teal); color: #fff; }
+      @media (prefers-color-scheme: dark) { .btn.teal { color: #0b2420; } }
+      .btn.ghost { background: transparent; }
+      .btn.small { padding: 6px 11px; font-size: 13.5px; border-radius: 8px; }
+      .btn:disabled { opacity: .45; cursor: not-allowed; }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+      label.field { display: block; font-weight: 600; font-size: 14px; margin: 14px 0 6px; }
+      label.field:first-child { margin-top: 0; }
+      textarea, select, input[type="text"] {
+        font: inherit; width: 100%; background: var(--surface-2); color: var(--ink);
+        border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font-size: 15.5px;
+      }
+      textarea { min-height: 130px; resize: vertical; line-height: 1.8; }
+      input[type="range"] { width: 100%; accent-color: var(--accent); }
+      .slider-row { display: grid; grid-template-columns: 110px 1fr 52px; gap: 10px; align-items: center; margin: 8px 0; font-size: 14px; }
+      .slider-row output { font-family: "Archivo", sans-serif; font-variant-numeric: tabular-nums; text-align: right; font-weight: 700; }
+      .msg { font-size: 14px; border-radius: 10px; padding: 10px 13px; margin-top: 12px; display: none; }
+      .msg.show { display: block; }
+      .msg.err { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+      .msg.ok { background: var(--teal-soft); color: var(--teal); border: 1px solid var(--teal); }
+      .field-note { font-size: 13px; color: var(--ink-soft); margin: 6px 0 0; }
+      .voice-status { font-size: 14px; border-radius: 10px; padding: 12px 14px; margin: 12px 0 2px; border: 1px solid var(--line); background: var(--surface-2); }
+      .voice-status.warn { background: var(--amber-soft); border-color: var(--amber); }
+      .voice-status.ok { background: var(--teal-soft); border-color: var(--teal); }
+      .voice-status strong { font-weight: 800; display: block; margin-bottom: 4px; }
+      .voice-status ul { margin: 8px 0 2px; padding-left: 20px; }
+      .voice-status li { margin: 4px 0; }
+      .voice-status code { font-family: "Archivo", sans-serif; font-size: 13px; background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+
+      /* ---------- profile stats ---------- */
+      .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 6px; }
+      @media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
+      .stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+      .stat .k { font-size: 12.5px; color: var(--ink-faint); font-weight: 600; }
+      .stat .v { font-size: 22px; font-weight: 800; font-family: "Archivo", "Noto Sans Myanmar", sans-serif; margin-top: 2px; }
+      .stat .d { font-size: 12.5px; color: var(--ink-soft); }
+      .piano { display: flex; gap: 3px; margin-top: 14px; }
+      .piano span { flex: 1; height: 34px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); position: relative; }
+      .piano span.on { background: var(--accent); border-color: var(--accent); }
+      .piano-labels { display: flex; gap: 3px; font-size: 10.5px; color: var(--ink-faint); margin-top: 4px; text-align: center; }
+      .piano-labels span { flex: 1; }
+
+      /* ---------- video ---------- */
+      .video-box { background: #000; border-radius: 10px; overflow: hidden; }
+      .video-box video { width: 100%; display: block; max-height: 420px; background: #000; }
+      .drop {
+        border: 2px dashed var(--line); border-radius: 10px; padding: 26px 16px; text-align: center; color: var(--ink-soft);
+      }
+      .drop strong { color: var(--ink); }
+      input[type="file"] { font: inherit; font-size: 14px; max-width: 100%; }
+      .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14.5px; margin-top: 12px; cursor: pointer; }
+      .check input { width: 19px; height: 19px; margin-top: 3px; accent-color: var(--accent); flex: none; }
+
+      footer { margin-top: 34px; color: var(--ink-faint); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; }
+      .hidden { display: none !important; }
+      .preset-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
+      .preset-chip { font:inherit; font-size:13.5px; font-weight:600; padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer; }
+      .preset-chip.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+      .saved-item { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; border:1px solid var(--line); background:var(--surface-2); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+      .saved-item .smeta { flex:1 1 180px; min-width:0; }
+      .saved-item .sname { font-weight:700; font-size:14.5px; }
+      .saved-item .sinfo { font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+      .formant-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+      @media(max-width:560px){ .formant-row{grid-template-columns:1fr 1fr 1fr;} }
+      .mini-stat { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; text-align:center; }
+      .mini-stat .k{font-size:11px;color:var(--ink-faint);font-weight:700;letter-spacing:.02em}
+      .mini-stat .v{font-weight:800;font-family:"Archivo",sans-serif;font-size:15px}
+      .target-box { background:var(--teal-soft); border:1px solid var(--teal); border-radius:10px; padding:10px 12px; font-size:13.5px; margin-top:10px; display:none; }
+      .target-box.show{display:block}
+      .inline-row{display:flex;gap:8px;flex-wrap:wrap}
+      .inline-row input[type="text"]{flex:1 1 180px}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="masthead">
+        <div>
+          <h1><span class="en">Voice Studio</span>ကိုယ်ပိုင်အသံ စတူဒီယို</h1>
+          <p>ကိုယ့်အသံကို နမူနာဖမ်းပြီး Pitch, Formant, Jitter, Brightness အပြည့်အစုံ ဆန်းစစ်တာ၊ ပရိုဖိုင်သိမ်းပြီး လိုချင်တဲ့အသံပုံစံ (Preset / ပစ်မှတ်ပရိုဖိုင်) ကို ပြောင်းတာ၊ စာဖတ်ပြတာနဲ့ ဗီဒီယို နောက်ခံစကား ရောစပ်ထုတ်တာတွေ လုပ်နိုင်ပါတယ်။</p>
+        </div>
+        <div class="profile-chip" id="profileChip">
+          <div class="label">အသံပရိုဖိုင်</div>
+          <div class="value" id="chipValue">မရှိသေးပါ</div>
+          <div class="sub" id="chipSub">အသံတစ်ခု ဖမ်းပြီး “ပရိုဖိုင်လုပ်မည်” နှိပ်ပါ</div>
+        </div>
+      </header>
+
+      <nav class="tabs" role="tablist" aria-label="အပိုင်းများ">
+        <button class="tab-btn" role="tab" aria-selected="true" data-tab="record">🎙️ အသံဖမ်းရန်</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="tts">📖 စာဖတ်ပြရန်</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="video">🎬 ဗီဒီယို နောက်ခံစကား</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="fx">🎚️ အသံပြောင်းရန်</button>
+      </nav>
+
+      <!-- ============ RECORD ============ -->
+      <section class="panel active" id="panel-record" role="tabpanel">
+        <div class="card">
+          <h2>အသံနမူနာ ဖမ်းယူရန်</h2>
+          <p class="hint">မိုက်ခရိုဖုန်းခွင့်ပြုချက် တောင်းရင် Allow နှိပ်ပါ။ တိတ်ဆိတ်တဲ့နေရာမှာ ပုံမှန်အသံနဲ့ ၂၀–၃၀ စက္ကန့်လောက် ဖတ်ပြရင် ပရိုဖိုင် ပိုတိကျပါတယ်။</p>
+          <div class="rec-stage">
+            <canvas class="wave" id="liveWave" width="900" height="220"></canvas>
+            <div class="rec-timer" id="recTimer">00:00</div>
+            <div class="rec-status" id="recStatus">ဖမ်းရန် အဆင်သင့်ဖြစ်ပါပြီ</div>
+            <button class="rec-btn" id="recBtn" aria-label="အသံဖမ်းရန် / ရပ်ရန်">
+              <svg id="recIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15zm7-3.5a1 1 0 0 0-2 0A5 5 0 0 1 7 11.5a1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08a7 7 0 0 0 6-6.42z"/></svg>
+            </button>
+            <div class="sample-script">
+              <div class="label">နမူနာဖတ်ရန် စာသား (မဖတ်ချင်လည်း ကိုယ့်ဘာသာ ပြောနိုင်ပါတယ်)</div>
+              <div>“ကျွန်တော် ဒီနေ့ မနက်စောစော ထပြီး ဈေးသွားခဲ့ပါတယ်။ ရာသီဥတုက သာယာပြီး လေကောင်းလေသန့် ရနေပါတယ်။ လမ်းမှာ သူငယ်ချင်းတစ်ယောက်နဲ့ ဆုံတော့ ကော်ဖီဆိုင်မှာ ထိုင်ပြီး အလုပ်အကြောင်း ဆွေးနွေးခဲ့ကြပါတယ်။ ညနေကျရင် မိသားစုနဲ့အတူ ထမင်းစားပြီး စာအုပ်တစ်အုပ် ဖတ်ဖို့ စီစဉ်ထားပါတယ်။”</div>
+            </div>
+          </div>
+          <div class="msg" id="recMsg"></div>
+        </div>
+
+        <div class="card">
+          <h2>ဖမ်းထားသော အသံများ</h2>
+          <p class="hint">အသံတစ်ခုကို ရွေးပြီး အသံပရိုဖိုင် ဆန်းစစ်နိုင်ပါတယ်။ ဒေါင်းလုဒ်ဆွဲပြီး ဖုန်းထဲ သိမ်းထားလို့လည်း ရပါတယ်။</p>
+          <div id="takeList"><div class="empty">ဖမ်းထားတာ မရှိသေးပါ — အပေါ်က အနီရောင်ခလုတ်ကို နှိပ်ပြီး စဖမ်းပါ</div></div>
+        </div>
+
+        <div class="card" id="profileCard">
+          <h2>အသံပရိုဖိုင် ဆန်းစစ်ချက် — အပြည့်အစုံ တိုင်းတာချက်</h2>
+          <p class="hint">Pitch (F0) အပြင် Formant, Jitter, Brightness (Spectral Centroid), ပြောသံပါဝင်နှုန်း တို့ကိုပါ တိုင်းတာပါတယ်။ Formant နဲ့ Jitter ဟာ browser ထဲ ခန့်မှန်းချက်ဖြစ်ပြီး ဆေးဘက်ဆိုင်ရာ / forensic တိုင်းတာချက် မဟုတ်ပါ။ ပရိုဖိုင်ကို သိမ်းထားရင် နောက်တစ်ခါ ပြန်သုံးပြီး အသံပြောင်းရာမှာ ပစ်မှတ်အဖြစ် သုံးနိုင်ပါတယ်။</p>
+          <div id="profileBody"><div class="empty">ပရိုဖိုင် မဆန်းစစ်ရသေးပါ</div></div>
+          <div id="profileSaveArea" class="hidden" style="margin-top:16px;border-top:1px dashed var(--line);padding-top:14px">
+            <label class="field" for="profileNameInput">ဒီပရိုဖိုင်ကို သိမ်းရန် — အမည်</label>
+            <div class="inline-row">
+              <input type="text" id="profileNameInput" placeholder="ဥပမာ — ကျွန်တော့်အသံ၊ အဖေ့အသံ" />
+              <button class="btn teal" id="saveProfileBtn" type="button">💾 ပရိုဖိုင် သိမ်းမည်</button>
+            </div>
+            <p class="field-note">သိမ်းထားသော ပရိုဖိုင်များသည် ဒီ browser ထဲမှာပဲ ရှိပါတယ် (localStorage)။ အသံဖိုင်ကိုတော့ မသိမ်းပါ — တိုင်းတာချက်ဂဏန်းများကိုပဲ သိမ်းပါတယ်။</p>
+            <div class="msg" id="profileSaveMsg"></div>
+          </div>
+          <div style="margin-top:18px">
+            <h3 style="margin:0 0 8px;font-size:16px">သိမ်းထားသော ပရိုဖိုင်များ</h3>
+            <div id="savedProfileList"><div class="empty">သိမ်းထားသော ပရိုဖိုင် မရှိသေးပါ</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TTS ============ -->
+      <section class="panel" id="panel-tts" role="tabpanel">
+        <div class="card">
+          <h2>စာသားကို အသံထွက် ဖတ်ပြရန်</h2>
+          <p class="hint">စာသားရိုက်ထည့်ပြီး ဖတ်ခိုင်းပါ။ အသံပရိုဖိုင် ရှိရင် ကိုယ့်အသံရဲ့ အနိမ့်အမြင့်နဲ့ အမြန်နှုန်းကို အလိုအလျောက် ကိုက်ညှိပေးထားပါတယ်။ မြန်မာစာအတွက် ဖုန်းထဲမှာ မြန်မာအသံ (my-MM) မရှိရင် အွန်လိုင်း မြန်မာအသံနဲ့ အလိုအလျောက် ဖတ်ပေးပါတယ် — အင်တာနက်တော့ လိုပါတယ်။</p>
+          <label class="field" for="ttsEngine">ဖတ်ပြမည့် နည်း</label>
+          <select id="ttsEngine">
+            <option value="auto" selected>အလိုအလျောက် — မြန်မာစာဆို အွန်လိုင်းအသံ သုံးမည်</option>
+            <option value="online">အွန်လိုင်း မြန်မာအသံ (အင်တာနက် လိုသည်)</option>
+            <option value="device">ဖုန်းထဲက အသံ</option>
+          </select>
+          <div class="voice-status" id="voiceStatus">အသံစာရင်း စစ်နေပါတယ်…</div>
+          <label class="field" for="ttsText">ဖတ်ပြမည့် စာသား</label>
+          <textarea id="ttsText" placeholder="ဒီမှာ ဖတ်ပြစေချင်တဲ့ စာသားကို ရိုက်ထည့်ပါ…">မင်္ဂလာပါ။ ဒါက ကျွန်တော့်ရဲ့ ကိုယ်ပိုင်အသံ စတူဒီယိုကနေ ဖတ်ပြနေတာ ဖြစ်ပါတယ်။ ဒီနေ့ ရာသီဥတု သာယာပါတယ်။</textarea>
+          <label class="field" for="ttsSavedProfile">သိမ်းထားသော ပရိုဖိုင်မှ Pitch သုံးရန် (ရွေးချယ်နိုင်သည်)</label>
+          <select id="ttsSavedProfile"><option value="">(ပရိုဖိုင် မရွေးပါ — လက်ရှိ slider အတိုင်း)</option></select>
+          <p class="field-note">ပရိုဖိုင်ရွေးရင် ၎င်းရဲ့ median pitch အတိုင်း TTS pitch ကို အလိုအလျောက် ညှိပေးပါမယ်။</p>
+          <label class="field" for="ttsVoice">အသံ (ဖုန်းနည်း သုံးမှသာ လိုသည်)</label>
+          <select id="ttsVoice"></select>
+          <p class="field-note" id="voiceNote"></p>
+          <p class="field-note">အနိမ့်အမြင့် (pitch) ညှိတာက ဖုန်းနည်းမှာပဲ အကျိုးသက်ရောက်ပါတယ်။ အွန်လိုင်းနည်းမှာ အမြန်နှုန်းကိုပဲ ညှိလို့ရပါတယ်။</p>
+          <div class="slider-row"><span>အနိမ့်အမြင့်</span><input type="range" id="ttsPitch" min="0.5" max="2" step="0.05" value="1" /><output id="ttsPitchOut">1.00</output></div>
+          <div class="slider-row"><span>အမြန်နှုန်း</span><input type="range" id="ttsRate" min="0.5" max="1.8" step="0.05" value="1" /><output id="ttsRateOut">1.00</output></div>
+          <div class="btn-row">
+            <button class="btn primary" id="speakBtn">▶ ဖတ်ပြပါ</button>
+            <button class="btn" id="stopSpeakBtn">■ ရပ်ပါ</button>
+            <button class="btn ghost" id="applyProfileBtn">ပရိုဖိုင်အတိုင်း ပြန်ညှိမည်</button>
+          </div>
+          <div class="msg" id="ttsMsg"></div>
+        </div>
+      </section>
+
+      <!-- ============ VIDEO ============ -->
+      <section class="panel" id="panel-video" role="tabpanel">
+        <div class="card">
+          <h2>ဗီဒီယိုအတွက် နောက်ခံစကားပြော</h2>
+          <p class="hint">ဗီဒီယိုဖိုင် ရွေးပြီး ဖွင့်ထားစဉ် ကိုယ့်အသံနဲ့ ရှင်းလင်းပြောဆိုပါ — ဗီဒီယိုနဲ့ ကိုယ့်အသံကို ရောစပ်ပြီး ဖိုင်အသစ် ထုတ်ပေးပါမယ်။</p>
+          <div class="drop" id="videoDrop">
+            <strong>ဗီဒီယိုဖိုင် ရွေးပါ</strong><br />
+            <span style="font-size:13.5px">MP4 / WebM — ဖုန်း gallery ထဲက ဖိုင်လည်း ရပါတယ်</span><br /><br />
+            <input type="file" id="videoFile" accept="video/*" />
+          </div>
+          <div id="videoWork" class="hidden">
+            <div class="video-box" style="margin-top:16px"><video id="dubVideo" playsinline></video></div>
+            <label class="check"><input type="checkbox" id="keepOrigAudio" checked /> မူရင်းဗီဒီယိုအသံကိုပါ အသံတိုးပြီး ရောထည့်မည် (မူရင်းအသံကို နောက်ခံအဖြစ် တိုးထားပေးပါတယ်)</label>
+            <div class="rec-timer" id="dubTimer" style="font-size:24px">00:00</div>
+            <div class="rec-status" id="dubStatus">ဗီဒီယို အဆင်သင့်ဖြစ်ပါပြီ</div>
+            <div class="btn-row">
+              <button class="btn primary" id="dubRecBtn">● နောက်ခံစကား စဖမ်းမည်</button>
+              <button class="btn" id="dubStopBtn" disabled>■ ရပ်ပြီး ထုတ်မည်</button>
+            </div>
+            <div id="dubResult"></div>
+          </div>
+          <div class="msg" id="videoMsg"></div>
+        </div>
+      </section>
+
+      <!-- ============ FX ============ -->
+      <section class="panel" id="panel-fx" role="tabpanel">
+        <div class="card">
+          <h2>အသံပြောင်းလဲရန် — ပရိုဖိုင် / Preset ဖြင့်</h2>
+          <p class="hint">ဒါက browser ထဲမှာ လုပ်တဲ့ <b>အနီးစပ်ဆုံး အသံပြောင်းလဲမှု</b> ပါ — လူတစ်ယောက်နဲ့ အတိအကျတူတဲ့ neural clone မဟုတ်ပါ။ Pitch + Formant + နှုန်း + Brightness ကို ပေါင်းပြောင်းပေးပါတယ်။ Preset ရွေးတာနဲ့ slider တွေ အလိုအလျောက် ညှိသွားပါမယ်၊ ကိုယ်တိုင် ပြန်ညှိလို့လည်း ရပါတယ်။</p>
+          <label class="field" for="fxSource">အသုံးပြုမည့် အသံ (မူရင်း)</label>
+          <select id="fxSource"></select>
+
+          <label class="field">Preset အသံပုံစံများ — နှိပ်ပြီး စမ်းပါ</label>
+          <div class="preset-grid" id="presetGrid"></div>
+
+          <label class="field" for="fxTargetProfile">သိမ်းထားသော ပရိုဖိုင်ကို ပစ်မှတ်ထားပြောင်းရန်</label>
+          <select id="fxTargetProfile"><option value="">(Preset / လက်ညှိကိုပဲ သုံးမည်)</option></select>
+          <div class="target-box" id="fxTargetInfo"></div>
+          <p class="field-note">ပစ်မှတ်ပရိုဖိုင် ရွေးရင် မူရင်းအသံရဲ့ median pitch နဲ့ နှိုင်းပြီး pitch ratio နဲ့ formant ratio ကို အလိုအလျောက် တွက်ပေးပါမယ်။ မူရင်းအသံကို အရင် “ပရိုဖိုင်လုပ်မည်” နဲ့ ဆန်းစစ်ထားရင် ပိုတိကျပါတယ်။</p>
+
+          <div class="slider-row"><span>Pitch အချိုး</span><input type="range" id="fxPitch" min="0.5" max="2" step="0.01" value="1" /><output id="fxPitchOut">1.00×</output></div>
+          <div class="slider-row"><span>Formant အချိုး</span><input type="range" id="fxFormant" min="0.7" max="1.4" step="0.01" value="1" /><output id="fxFormantOut">1.00×</output></div>
+          <div class="slider-row"><span>ပြောနှုန်း (Speed)</span><input type="range" id="fxSpeed" min="0.7" max="1.4" step="0.01" value="1" /><output id="fxSpeedOut">1.00×</output></div>
+          <div class="slider-row"><span>Brightness</span><input type="range" id="fxBrightness" min="-100" max="100" step="1" value="0" /><output id="fxBrightnessOut">0</output></div>
+          <div class="slider-row"><span>ပဲ့တင်သံ (echo)</span><input type="range" id="fxEcho" min="0" max="0.7" step="0.05" value="0" /><output id="fxEchoOut">0%</output></div>
+          <label class="check"><input type="checkbox" id="fxRadio" /> ရေဒီယို / ဖုန်းအသံ ပုံစံ (Bandpass 400–2600 Hz)</label>
+          <div class="btn-row">
+            <button class="btn" id="fxResetBtn" type="button">↺ မူရင်း ပြန်ထားမည် (1.00×)</button>
+            <button class="btn primary" id="fxRenderBtn">🎧 ပြောင်းပြီး နားထောင်မည်</button>
+          </div>
+          <div id="fxResult" style="margin-top:14px"></div>
+          <div class="msg" id="fxMsg"></div>
+        </div>
+      </section>
+
+      <footer>
+        အသံနဲ့ ဗီဒီယိုဖိုင်တွေကို ဒီ tab ဖွင့်ထားစဉ်အတွင်းသာ သိမ်းထားပါတယ် — ပိတ်လိုက်ရင် ပျောက်သွားတာမို့ လိုချင်တဲ့ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲထားပါ။ သိမ်းထားသော <b>ပရိုဖိုင် တိုင်းတာချက်ဂဏန်းများ</b>ကိုသာ browser localStorage မှာ သိမ်းပြီး နောက်တစ်ခါ ပြန်သုံးနိုင်ပါတယ် (အသံဖိုင်ကို မသိမ်းပါ)။ အသံပြောင်းလဲမှုဟာ Pitch + Formant + Brightness အခြေခံ အနီးစပ်ဆုံး ပြောင်းလဲမှုဖြစ်ပြီး အတိအကျ neural clone မဟုတ်ပါ။ လုပ်ဆောင်မှုအားလုံး သင့် device ပေါ်မှာပဲ ဖြစ်ပြီး ဘယ် server ကိုမှ မပို့ပါ။
+      </footer>
+    </div>
+
+    <script>
+      "use strict";
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+      /* ================= tabs ================= */
+      $$(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          $$(".tab-btn").forEach((b) => b.setAttribute("aria-selected", b === btn ? "true" : "false"));
+          $$(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + btn.dataset.tab));
+        });
+      });
+
+      /* ================= shared audio helpers ================= */
+      let audioCtx = null;
+      function getCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+      function fmtTime(sec) {
+        sec = Math.max(0, Math.floor(sec || 0));
+        return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+      }
+      function pickMime() {
+        const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", ""];
+        for (const c of cands) { if (c === "" || (window.MediaRecorder && MediaRecorder.isTypeSupported(c))) return c; }
+        return "";
+      }
+      function extFor(mime) {
+        if (!mime) return "webm";
+        if (mime.includes("mp4")) return "m4a";
+        if (mime.includes("ogg")) return "ogg";
+        return "webm";
+      }
+      function showMsg(el, text, kind) {
+        el.textContent = text;
+        el.className = "msg show " + (kind || "");
+      }
+      function hideMsg(el) { el.className = "msg"; el.textContent = ""; }
+
+      /* ================= state ================= */
+      const takes = []; // {id, name, blob, url, mime, duration, buffer, metrics}
+      let takeSeq = 0;
+      let profile = null; // extended metrics object (current analysis)
+      const PROFILES_KEY = "voice-studio-profiles";
+      let savedProfiles = [];
+      try { const raw = localStorage.getItem(PROFILES_KEY); if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) savedProfiles = p; } } catch(e) {}
+      function persistProfiles(){ try { localStorage.setItem(PROFILES_KEY, JSON.stringify(savedProfiles)); } catch(e){} }
+      function uid(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+      /* ================= recorder ================= */
+      const recBtn = $("#recBtn"), recIcon = $("#recIcon"), recTimer = $("#recTimer"),
+            recStatus = $("#recStatus"), recMsg = $("#recMsg"), liveWave = $("#liveWave");
+      let mediaRecorder = null, recChunks = [], recStream = null, recAnalyser = null,
+          recStartAt = 0, recTimerInt = null, waveRAF = null, isRecording = false;
+
+      function drawIdleWave() {
+        const c = liveWave.getContext("2d");
+        const W = liveWave.width, H = liveWave.height;
+        c.clearRect(0, 0, W, H);
+        c.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--wave-dim");
+        c.lineWidth = 3; c.beginPath();
+        c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
+      }
+      drawIdleWave();
+
+      function drawLiveWave() {
+        if (!recAnalyser) return;
+        const c = liveWave.getContext("2d");
+        const W = liveWave.width, H = liveWave.height;
+        const data = new Uint8Array(recAnalyser.fftSize);
+        recAnalyser.getByteTimeDomainData(data);
+        c.clearRect(0, 0, W, H);
+        c.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--wave");
+        c.lineWidth = 3; c.beginPath();
+        const step = Math.ceil(data.length / W);
+        for (let x = 0; x < W; x++) {
+          const v = data[x * step] / 128 - 1;
+          const y = H / 2 + v * H * 0.46;
+          if (x === 0) c.moveTo(x, y); else c.lineTo(x, y);
+        }
+        c.stroke();
+        waveRAF = requestAnimationFrame(drawLiveWave);
+      }
+
+      async function startRecording() {
+        hideMsg(recMsg);
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          showMsg(recMsg, "ဒီ browser မှာ မိုက်ခရိုဖုန်း အသုံးပြုလို့ မရပါ။ Chrome နောက်ဆုံးဗားရှင်းနဲ့ စမ်းကြည့်ပါ။", "err");
+          return;
+        }
+        try {
+          recStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        } catch (e) {
+          showMsg(recMsg, "မိုက်ခရိုဖုန်း ခွင့်ပြုချက် မရပါ။ Browser ဆက်တင်ထဲမှာ မိုက် ခွင့်ပြုပေးပြီးမှ ပြန်စမ်းပါ။", "err");
+          return;
+        }
+        const ctx = getCtx();
+        const src = ctx.createMediaStreamSource(recStream);
+        recAnalyser = ctx.createAnalyser(); recAnalyser.fftSize = 2048;
+        src.connect(recAnalyser);
+        const mime = pickMime();
+        try { mediaRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined); }
+        catch (e) { mediaRecorder = new MediaRecorder(recStream); }
+        recChunks = [];
+        mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) recChunks.push(ev.data); };
+        mediaRecorder.onstop = onRecStop;
+        mediaRecorder.start(250);
+        isRecording = true;
+        recStartAt = Date.now();
+        recTimer.textContent = "00:00";
+        recTimerInt = setInterval(() => { recTimer.textContent = fmtTime((Date.now() - recStartAt) / 1000); }, 250);
+        recStatus.innerHTML = '<span class="dot"></span>ဖမ်းနေပါတယ်… ပုံမှန်အသံနဲ့ စကားပြော / ဖတ်ပြပါ';
+        recBtn.classList.add("recording");
+        recIcon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+        drawLiveWave();
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+      }
+
+      async function onRecStop() {
+        isRecording = false;
+        clearInterval(recTimerInt);
+        if (waveRAF) cancelAnimationFrame(waveRAF);
+        if (recStream) recStream.getTracks().forEach((t) => t.stop());
+        recBtn.classList.remove("recording");
+        recIcon.innerHTML = '<path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15zm7-3.5a1 1 0 0 0-2 0A5 5 0 0 1 7 11.5a1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08a7 7 0 0 0 6-6.42z"/>';
+        drawIdleWave();
+        const mime = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(recChunks, { type: mime });
+        const duration = (Date.now() - recStartAt) / 1000;
+        recStatus.textContent = "ဖမ်းပြီးပါပြီ — အောက်မှာ နားထောင်နိုင်ပါတယ်";
+        if (blob.size < 1200) {
+          showMsg(recMsg, "အသံက တိုလွန်းပါတယ်။ စက္ကန့်အနည်းငယ်ကြာ ပြောပြီး ပြန်ဖမ်းကြည့်ပါ။", "err");
+          return;
+        }
+        takeSeq += 1;
+        const take = {
+          id: "t" + Date.now(), name: "အသံနမူနာ " + takeSeq, blob,
+          url: URL.createObjectURL(blob), mime, duration, buffer: null
+        };
+        takes.unshift(take);
+        renderTakes();
+        refreshFxSources();
+      }
+
+      recBtn.addEventListener("click", () => { isRecording ? stopRecording() : startRecording(); });
+
+      /* ================= takes list ================= */
+      function renderTakes() {
+        const list = $("#takeList");
+        if (!takes.length) {
+          list.innerHTML = '<div class="empty">ဖမ်းထားတာ မရှိသေးပါ — အပေါ်က အနီရောင်ခလုတ်ကို နှိပ်ပြီး စဖမ်းပါ</div>';
+          return;
+        }
+        list.innerHTML = "";
+        takes.forEach((t) => {
+          const row = document.createElement("div");
+          row.className = "take";
+          const isProfile = profile && profile.takeId === t.id;
+          row.innerHTML =
+            '<div class="meta"><div class="name"></div><div class="info">' + fmtTime(t.duration) + " • " + Math.max(1, Math.round(t.blob.size / 1024)) + ' KB</div></div>' +
+            (isProfile ? '<span class="badge">ပရိုဖိုင် အသံ</span>' : "");
+          row.querySelector(".name").textContent = t.name;
+          const audio = document.createElement("audio");
+          audio.controls = true; audio.src = t.url; audio.preload = "metadata";
+          const profBtn = document.createElement("button");
+          profBtn.className = "btn small teal"; profBtn.textContent = "ပရိုဖိုင်လုပ်မည်";
+          profBtn.addEventListener("click", () => analyzeTake(t));
+          const dl = document.createElement("a");
+          dl.className = "btn small"; dl.textContent = "⬇ ဒေါင်းလုဒ်";
+          dl.href = t.url; dl.download = t.name + "." + extFor(t.mime);
+          const del = document.createElement("button");
+          del.className = "btn small ghost"; del.textContent = "ဖျက်မည်";
+          del.addEventListener("click", () => {
+            const i = takes.indexOf(t); if (i >= 0) takes.splice(i, 1);
+            URL.revokeObjectURL(t.url);
+            if (profile && profile.takeId === t.id) { profile = null; renderProfile(); }
+            renderTakes(); refreshFxSources();
+          });
+          row.appendChild(audio); row.appendChild(profBtn); row.appendChild(dl); row.appendChild(del);
+          list.appendChild(row);
+        });
+      }
+
+      /* ================= spectral helpers ================= */
+      function fftInPlace(re, im){
+        const n = re.length; let j=0;
+        for(let i=1;i<n;i++){ let bit=n>>1; for(; j & bit; bit>>=1) j ^= bit; j ^= bit;
+          if(i<j){ let tr=re[i]; re[i]=re[j]; re[j]=tr; let ti=im[i]; im[i]=im[j]; im[j]=ti; } }
+        for(let len=2; len<=n; len<<=1){ const ang=2*Math.PI/len; const wr=Math.cos(ang), wi=-Math.sin(ang);
+          for(let i=0;i<n;i+=len){ let cwr=1, cwi=0;
+            for(let k=0;k<len/2;k++){ const ur=re[i+k], ui=im[i+k]; const vr=re[i+k+len/2]*cwr - im[i+k+len/2]*cwi; const vi=re[i+k+len/2]*cwi + im[i+k+len/2]*cwr;
+              re[i+k]=ur+vr; im[i+k]=ui+vi; re[i+k+len/2]=ur-vr; im[i+k+len/2]=ui-vi;
+              const nwr=cwr*wr - cwi*wi; cwi=cwr*wi + cwi*wr; cwr=nwr; } } }
+      }
+      function frameSpectrum(frame, sr){
+        const N=2048; const re=new Float64Array(N), im=new Float64Array(N);
+        for(let i=0;i<N;i++){ const w=0.5-0.5*Math.cos(2*Math.PI*i/(N-1)); re[i]=(frame[i]||0)*w; }
+        fftInPlace(re,im); const mags=new Float64Array(N/2);
+        for(let i=0;i<N/2;i++) mags[i]=Math.sqrt(re[i]*re[i]+im[i]*im[i]);
+        return mags;
+      }
+      function centroidFromMags(mags, sr, fftSize){
+        let num=0, den=0; for(let i=1;i<mags.length;i++){ const f=i*sr/fftSize; num+=f*mags[i]; den+=mags[i]; }
+        return den>0 ? num/den : 0;
+      }
+      function peakInBand(mags, sr, fftSize, lo, hi){
+        let bestF=0,bestV=-1; const i0=Math.max(1,Math.floor(lo*fftSize/sr)), i1=Math.min(mags.length-1,Math.ceil(hi*fftSize/sr));
+        for(let i=i0;i<=i1;i++){ if(mags[i]>bestV){bestV=mags[i]; bestF=i*sr/fftSize;} }
+        return Math.round(bestF);
+      }
+      function zcrOf(frame){ let c=0; for(let i=1;i<frame.length;i++){ if((frame[i]>=0 && frame[i-1]<0)||(frame[i]<0 && frame[i-1]>=0)) c++; } return c/frame.length; }
+
+      /* ================= pitch analysis ================= */
+      function autoCorrelate(buf, sampleRate) {
+        const SIZE = buf.length;
+        let rms = 0;
+        for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+        rms = Math.sqrt(rms / SIZE);
+        if (rms < 0.012) return -1;
+        let r1 = 0, r2 = SIZE - 1;
+        const th = 0.2;
+        for (let i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < th) { r1 = i; break; } }
+        for (let i = 1; i < SIZE / 2; i++) { if (Math.abs(buf[SIZE - i]) < th) { r2 = SIZE - i; break; } }
+        const b = buf.slice(r1, r2);
+        const N = b.length;
+        if (N < 100) return -1;
+        const c = new Array(N).fill(0);
+        for (let i = 0; i < N; i++) for (let j = 0; j < N - i; j++) c[i] += b[j] * b[j + i];
+        let d = 0;
+        while (d < N - 1 && c[d] > c[d + 1]) d++;
+        let maxVal = -1, maxPos = 0;
+        for (let i = d; i < N; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; } }
+        if (maxPos <= 0) return -1;
+        let T0 = maxPos;
+        const x1 = c[T0 - 1] || 0, x2 = c[T0], x3 = c[T0 + 1] || 0;
+        const a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
+        if (a) T0 = T0 - bb / (2 * a);
+        const freq = sampleRate / T0;
+        return (freq >= 55 && freq <= 500) ? freq : -1;
+      }
+
+      async function getBuffer(take) {
+        if (take.buffer) return take.buffer;
+        const ctx = getCtx();
+        const arr = await take.blob.arrayBuffer();
+        take.buffer = await ctx.decodeAudioData(arr.slice(0));
+        return take.buffer;
+      }
+
+      async function computeMetricsForTake(take){
+        const buffer = await getBuffer(take);
+        const ch = buffer.getChannelData(0);
+        const sr = buffer.sampleRate;
+        const win = 2048, hop = 1024;
+        const freqs = []; const periods = [];
+        let totalFrames = 0; let zcrSum = 0; let centroidSum = 0; let centroidCount = 0;
+        let avgMags = null;
+        for (let off = 0, fi=0; off + win < ch.length; off += hop, fi++) {
+          totalFrames++;
+          const frame = ch.slice(off, off + win);
+          zcrSum += zcrOf(frame);
+          const f = autoCorrelate(frame, sr);
+          if (f > 0) { freqs.push(f); periods.push(1/f); }
+          if (fi % 3 === 0) {
+            const mags = frameSpectrum(frame, sr);
+            if (!avgMags) avgMags = new Float64Array(mags.length);
+            for (let i=0;i<mags.length;i++) avgMags[i]+=mags[i];
+            centroidSum += centroidFromMags(mags, sr, 2048); centroidCount++;
+          }
+        }
+        if (freqs.length < 5) return null;
+        const sorted = freqs.slice().sort((a,b)=>a-b);
+        const median = sorted[Math.floor(sorted.length/2)];
+        const mean = freqs.reduce((a,b)=>a+b,0)/freqs.length;
+        const p10 = sorted[Math.floor(sorted.length*0.1)];
+        const p90 = sorted[Math.floor(sorted.length*0.9)];
+        const variance = freqs.reduce((a,b)=>a+(b-mean)*(b-mean),0)/freqs.length;
+        const stdHz = Math.sqrt(variance);
+        let jitterPct = 0;
+        if (periods.length>2){ const mp = periods.reduce((a,b)=>a+b,0)/periods.length; let jd=0; for(let i=1;i<periods.length;i++) jd+=Math.abs(periods[i]-periods[i-1]); jd/=(periods.length-1); jitterPct = mp>0 ? (jd/mp)*100 : 0; }
+        const voicedRatio = totalFrames ? freqs.length/totalFrames : 0;
+        const centroidHz = centroidCount ? Math.round(centroidSum/centroidCount) : 0;
+        const zcr = totalFrames ? (zcrSum/totalFrames) : 0;
+        let formants = {f1:0,f2:0,f3:0};
+        if (avgMags){ const n = centroidCount||1; for(let i=0;i<avgMags.length;i++) avgMags[i]/=n; formants.f1 = peakInBand(avgMags, sr, 2048, 300, 1000); formants.f2 = peakInBand(avgMags, sr, 2048, 900, 2400); formants.f3 = peakInBand(avgMags, sr, 2048, 1800, 3500); }
+        let typeLabel;
+        if (median < 105) typeLabel = "အသံနိမ့် (Bass ဘက်)";
+        else if (median < 145) typeLabel = "အမျိုးသား ပုံမှန်အသံ";
+        else if (median < 185) typeLabel = "အသံလတ် (ကြားအသံ)";
+        else if (median < 260) typeLabel = "အမျိုးသမီး ပုံမှန်အသံ";
+        else typeLabel = "အသံမြင့် (ကလေး / အသံစူး)";
+        const noteNames = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        const midi = Math.round(69 + 12 * Math.log2(median / 440));
+        const noteName = noteNames[((midi % 12)+12)%12] + (Math.floor(midi/12)-1);
+        const ttsPitch = Math.min(1.9, Math.max(0.55, median/118));
+        return { takeId: take.id, hz: median, medianHz: median, meanHz: Math.round(mean*10)/10, low: p10, high: p90, lowHz: p10, highHz: p90, stdHz: Math.round(stdHz*10)/10, jitterPct: Math.round(jitterPct*100)/100, centroidHz, zcr: Math.round(zcr*10000)/10000, formants, voicedRatio: Math.round(voicedRatio*100)/100, typeLabel, ttsPitch, noteName };
+      }
+
+      async function analyzeTake(take) {
+        const body = $("#profileBody");
+        body.innerHTML = '<div class="empty">ဆန်းစစ်နေပါတယ်… (Pitch + Formant + Jitter + Brightness)</div>';
+        try {
+          const m = await computeMetricsForTake(take);
+          if (!m) { body.innerHTML = '<div class="empty">အသံကို တိုင်းတာ မရပါ။ ပိုကျယ်ကျယ်၊ ပိုကြာကြာ ပြောပြီး ပြန်ဖမ်းကြည့်ပါ။</div>'; return; }
+          take.metrics = m;
+          profile = m;
+          $("#profileSaveArea").classList.remove("hidden");
+          const nameInput = $("#profileNameInput");
+          if (nameInput && !nameInput.value) nameInput.value = take.name + " — " + Math.round(m.medianHz) + " Hz";
+          renderProfile();
+          renderTakes();
+          if (typeof refreshFxSources === "function") refreshFxSources();
+        } catch (e) {
+          body.innerHTML = '<div class="empty">ဆန်းစစ်လို့ မရပါ။ အသံဖိုင်ကို ဖွင့်လို့ မရတာ ဖြစ်နိုင်ပါတယ် — အသံအသစ် ပြန်ဖမ်းကြည့်ပါ။</div>';
+        }
+      }
+
+      function renderProfile() {
+        const chipV = $("#chipValue"), chipS = $("#chipSub"), body = $("#profileBody");
+        if (!profile) {
+          chipV.textContent = "မရှိသေးပါ";
+          chipS.textContent = "အသံတစ်ခု ဖမ်းပြီး “ပရိုဖိုင်လုပ်မည်” နှိပ်ပါ";
+          body.innerHTML = '<div class="empty">ပရိုဖိုင် မဆန်းစစ်ရသေးပါ</div>';
+          const sa = $("#profileSaveArea"); if (sa) sa.classList.add("hidden");
+          return;
+        }
+        const med = profile.medianHz || profile.hz;
+        chipV.textContent = Math.round(med) + " Hz — " + profile.typeLabel;
+        chipS.textContent = "TTS pitch " + (profile.ttsPitch||1).toFixed(2) + " • Formant " + (profile.formants ? profile.formants.f1 + "/" + profile.formants.f2 + "/" + profile.formants.f3 + " Hz" : "—");
+        const bands = [
+          { lo: 55, hi: 105, label: "Bass" }, { lo: 105, hi: 145, label: "အမျိုးသား" },
+          { lo: 145, hi: 185, label: "အသံလတ်" }, { lo: 185, hi: 260, label: "အမျိုးသမီး" },
+          { lo: 260, hi: 420, label: "အသံမြင့်" }
+        ];
+        const onIdx = bands.findIndex((b) => med >= b.lo && med < b.hi);
+        const brightLabel = profile.centroidHz > 2800 ? "တောက်ပ / စူး" : profile.centroidHz > 1800 ? "ပုံမှန် တောက်ပမှု" : "နွေးထွေး / မှိန်";
+        body.innerHTML =
+          '<div class="stat-grid">' +
+          '<div class="stat"><div class="k">Median Pitch (F0)</div><div class="v">' + Math.round(med) + ' Hz</div><div class="d">Mean ' + (profile.meanHz||"—") + ' Hz • Note: ' + (profile.noteName||"") + '</div></div>' +
+          '<div class="stat"><div class="k">အသံအမျိုးအစား</div><div class="v" style="font-size:17px;line-height:1.5">' + profile.typeLabel + '</div><div class="d">အကွာအဝေး ' + Math.round(profile.lowHz||profile.low||0) + "–" + Math.round(profile.highHz||profile.high||0) + ' Hz</div></div>' +
+          '<div class="stat"><div class="k">Pitch အပြောင်းအလဲ (StdDev)</div><div class="v">' + (profile.stdHz||0) + ' Hz</div><div class="d">ကြီးရင် အသံအတက်အကျ များသည်</div></div>' +
+          '</div>' +
+          '<div class="stat-grid" style="margin-top:12px">' +
+          '<div class="stat"><div class="k">Jitter (ခန့်မှန်း)</div><div class="v">' + (profile.jitterPct||0) + '%</div><div class="d">အသံတုန်ခါမှု — ခန့်မှန်းချက်သာ</div></div>' +
+          '<div class="stat"><div class="k">Brightness — Centroid</div><div class="v">' + (profile.centroidHz||0) + ' Hz</div><div class="d">' + brightLabel + ' • ZCR ' + (profile.zcr||0) + '</div></div>' +
+          '<div class="stat"><div class="k">ပြောသံပါဝင်နှုန်း</div><div class="v">' + Math.round((profile.voicedRatio||0)*100) + '%</div><div class="d">Voiced frames အချိုး (နှုန်း proxy)</div></div>' +
+          '</div>' +
+          '<div class="formant-row">' +
+          '<div class="mini-stat"><div class="k">FORMANT F1 (ခန့်မှန်း)</div><div class="v">' + (profile.formants?profile.formants.f1:0) + ' Hz</div></div>' +
+          '<div class="mini-stat"><div class="k">FORMANT F2 (ခန့်မှန်း)</div><div class="v">' + (profile.formants?profile.formants.f2:0) + ' Hz</div></div>' +
+          '<div class="mini-stat"><div class="k">FORMANT F3 (ခန့်မှန်း)</div><div class="v">' + (profile.formants?profile.formants.f3:0) + ' Hz</div></div>' +
+          '</div>' +
+          '<p class="field-note">Formant နဲ့ Jitter ဟာ FFT peak-picking နဲ့ period အပြောင်းအလဲကနေ ခန့်မှန်းထားတာပါ — LPC / ဆေးဘက် တိုင်းတာချက်လောက် မတိကျပါ။ အသံပြောင်းရာမှာ အနီးစပ်ဆုံး လမ်းညွှန်အဖြစ်ပဲ သုံးပါ။</p>' +
+          '<div class="piano">' + bands.map((b, i) => '<span class="' + (i === onIdx ? "on" : "") + '"></span>').join("") + '</div>' +
+          '<div class="piano-labels">' + bands.map((b) => "<span>" + b.label + "</span>").join("") + '</div>' +
+          '<div class="btn-row"><button class="btn teal" id="useProfileTts">ဒီပရိုဖိုင်နဲ့ စာဖတ်ကြည့်မည် →</button><button class="btn" id="useProfileFx">ဒီပရိုဖိုင်ကို ပစ်မှတ်ထားပြီး အသံပြောင်းမည် →</button></div>';
+        const btn = $("#useProfileTts");
+        if (btn) btn.addEventListener("click", () => { applyProfileToTts(); document.querySelector('[data-tab="tts"]').click(); });
+        const fxBtn = $("#useProfileFx");
+        if (fxBtn) fxBtn.addEventListener("click", () => { document.querySelector('[data-tab="fx"]').click(); });
+      }
+
+      /* ---- saved profiles UI ---- */
+      function renderSavedProfiles(){
+        const list = $("#savedProfileList");
+        const fxSel = $("#fxTargetProfile");
+        const ttsSel = $("#ttsSavedProfile");
+        if (!list) return;
+        // populate selects preserving value
+        const fxCur = fxSel ? fxSel.value : ""; const ttsCur = ttsSel ? ttsSel.value : "";
+        if (fxSel){ fxSel.innerHTML = '<option value="">(Preset / လက်ညှိကိုပဲ သုံးမည်)</option>'; savedProfiles.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.name+" — "+Math.round(p.medianHz)+" Hz"; fxSel.appendChild(o); }); if (savedProfiles.some(p=>p.id===fxCur)) fxSel.value=fxCur; }
+        if (ttsSel){ ttsSel.innerHTML = '<option value="">(ပရိုဖိုင် မရွေးပါ — လက်ရှိ slider အတိုင်း)</option>'; savedProfiles.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.name+" — "+Math.round(p.medianHz)+" Hz"; ttsSel.appendChild(o); }); if (savedProfiles.some(p=>p.id===ttsCur)) ttsSel.value=ttsCur; }
+        if (!savedProfiles.length){ list.innerHTML='<div class="empty">သိမ်းထားသော ပရိုဖိုင် မရှိသေးပါ — အသံဆန်းစစ်ပြီးရင် အပေါ်မှာ သိမ်းနိုင်ပါတယ်</div>'; return; }
+        list.innerHTML="";
+        savedProfiles.forEach(p=>{
+          const row=document.createElement("div"); row.className="saved-item";
+          const d = p.createdAt ? new Date(p.createdAt).toLocaleDateString("my-MM") : "";
+          row.innerHTML='<div class="smeta"><div class="sname"></div><div class="sinfo">'+Math.round(p.medianHz)+' Hz • '+(p.typeLabel||"")+' • F1 '+(p.formants?p.formants.f1:0)+' / F2 '+(p.formants?p.formants.f2:0)+' Hz • Centroid '+(p.centroidHz||0)+' Hz'+(d?' • '+d:'')+'</div></div>';
+          row.querySelector(".sname").textContent=p.name;
+          const useBtn=document.createElement("button"); useBtn.className="btn small teal"; useBtn.textContent="သုံးမည်";
+          useBtn.addEventListener("click",()=>{ profile={ takeId:p.takeId||"", hz:p.medianHz, medianHz:p.medianHz, meanHz:p.meanHz, low:p.lowHz, high:p.highHz, lowHz:p.lowHz, highHz:p.highHz, stdHz:p.stdHz, jitterPct:p.jitterPct, centroidHz:p.centroidHz, zcr:p.zcr, formants:p.formants, voicedRatio:p.voicedRatio, typeLabel:p.typeLabel, ttsPitch:p.ttsPitch, noteName:p.noteName }; renderProfile(); const sa=$("#profileSaveArea"); if(sa) sa.classList.remove("hidden"); });
+          const delBtn=document.createElement("button"); delBtn.className="btn small ghost"; delBtn.textContent="ဖျက်မည်";
+          delBtn.addEventListener("click",()=>{ savedProfiles=savedProfiles.filter(x=>x.id!==p.id); persistProfiles(); renderSavedProfiles(); });
+          const btnWrap=document.createElement("div"); btnWrap.className="btn-row"; btnWrap.style.marginTop="0"; btnWrap.appendChild(useBtn); btnWrap.appendChild(delBtn);
+          row.appendChild(btnWrap); list.appendChild(row);
+        });
+      }
+
+      // wire save-profile button (elements exist above in DOM)
+      (function(){
+        const saveBtn = document.getElementById("saveProfileBtn");
+        if (saveBtn) saveBtn.addEventListener("click", () => {
+          const msgEl = document.getElementById("profileSaveMsg");
+          if (!profile) { if(msgEl) showMsg(msgEl, "အရင် အသံတစ်ခုကို ဆန်းစစ်ပါ။", "err"); return; }
+          const nameInp = document.getElementById("profileNameInput");
+          const name = (nameInp && nameInp.value.trim()) || ("ပရိုဖိုင် " + Math.round(profile.medianHz||profile.hz) + " Hz");
+          const rec = { id: uid(), name, createdAt: Date.now(), takeId: profile.takeId||"", medianHz: profile.medianHz||profile.hz, meanHz: profile.meanHz, lowHz: profile.lowHz||profile.low, highHz: profile.highHz||profile.high, stdHz: profile.stdHz, jitterPct: profile.jitterPct, centroidHz: profile.centroidHz, zcr: profile.zcr, formants: profile.formants, voicedRatio: profile.voicedRatio, noteName: profile.noteName, typeLabel: profile.typeLabel, ttsPitch: profile.ttsPitch };
+          savedProfiles.unshift(rec); persistProfiles(); renderSavedProfiles();
+          if (msgEl) showMsg(msgEl, "သိမ်းပြီးပါပြီ — “" + name + "” ကို အသံပြောင်းရန်နဲ့ စာဖတ်ပြရန်မှာ ပစ်မှတ်အဖြစ် ရွေးသုံးနိုင်ပါပြီ။", "ok");
+        });
+      })();
+
+      /* ================= TTS ================= */
+      const ttsVoiceSel = $("#ttsVoice"), ttsPitch = $("#ttsPitch"), ttsRate = $("#ttsRate"),
+            ttsPitchOut = $("#ttsPitchOut"), ttsRateOut = $("#ttsRateOut"), ttsMsg = $("#ttsMsg"),
+            ttsEngineSel = $("#ttsEngine"), voiceStatus = $("#voiceStatus"), voiceNote = $("#voiceNote");
+      let voices = [];
+      /* Some phones/browsers return an empty voice list for a while (or
+         forever, e.g. inside an in-app webview) and never fire
+         voiceschanged. Without a deadline the status box would sit on
+         "checking…" forever, so the check polls briefly and then settles
+         into a final answer. */
+      let voiceCheckDone = false, voicePollTimer = null;
+      /* Burmese is my-MM. ms-MY is Malay (Malaysia) — NOT Burmese.
+         The old check /my/ matched "ms-MY" too, so Malay voices were
+         wrongly labelled Burmese and read Myanmar text with Malay
+         pronunciation. Detection must be strict. */
+      function normLang(v) { return String((v && v.lang) || "").toLowerCase().replace(/_/g, "-"); }
+      function isBurmeseVoice(v) {
+        const lang = normLang(v);
+        if (lang.indexOf("ms-") === 0 || lang === "ms") return false;
+        if (lang === "my" || lang.indexOf("my-") === 0) return true;
+        return /burmese|myanmar/i.test((v && v.name) || "");
+      }
+      function isMalayVoice(v) { const l = normLang(v); return l === "ms" || l.indexOf("ms-") === 0; }
+      function hasBurmeseVoice() { return voices.some(isBurmeseVoice); }
+      function updateVoiceStatus() {
+        if (!voiceStatus) return;
+        if (!("speechSynthesis" in window)) {
+          voiceStatus.className = "voice-status warn";
+          voiceStatus.innerHTML = "<strong>ဒီ browser မှာ ဖုန်းအသံ မရပါ</strong>မြန်မာစာကို အွန်လိုင်း မြန်မာအသံနဲ့ ဖတ်ပေးပါမယ် (အင်တာနက် လိုပါတယ်)။";
+          return;
+        }
+        if (hasBurmeseVoice()) {
+          voiceStatus.className = "voice-status ok";
+          voiceStatus.innerHTML = "<strong>✓ မြန်မာအသံ (my-MM) တွေ့ပါတယ်</strong>ဖုန်းအသံနဲ့တင် မြန်မာစာကို မှန်မှန် ဖတ်နိုင်ပါတယ်။ အွန်လိုင်းနည်းကိုလည်း ရွေးသုံးနိုင်ပါတယ်။";
+        } else if (voices.length) {
+          voiceStatus.className = "voice-status warn";
+          voiceStatus.innerHTML =
+            "<strong>⚠ ဒီဖုန်းမှာ မြန်မာအသံ (my-MM) မရှိပါ</strong>" +
+            "အသံစာရင်းထဲက <code>ms-MY</code> ဆိုတာ မြန်မာ <b>မဟုတ်ပါ</b> — မလေးရှား (Malay) ဘာသာစကားရဲ့ အသံတွေပါ။ မြန်မာစာကို မလေးအသံနဲ့ ဖတ်ခိုင်းရင် အသံထွက် လုံးဝ မမှန်ပါဘူး။ ဒါကြောင့် မြန်မာစာကို <b>အွန်လိုင်း မြန်မာအသံ</b>နဲ့ အလိုအလျောက် ဖတ်ပေးပါမယ်။";
+        } else if (voiceCheckDone) {
+          voiceStatus.className = "voice-status warn";
+          voiceStatus.innerHTML =
+            "<strong>⚠ ဖုန်းအသံစာရင်း ဖွင့်လို့ မရပါ</strong>" +
+            "အသံစာရင်းကို အချိန်ပေးစစ်ပြီးပေမယ့် မပေါ်လာပါ — ဒီ browser / ဖုန်းမှာ ဖုန်းထဲက TTS အသံ မရတာ ဖြစ်နိုင်ပါတယ်။ စိတ်မပူပါနဲ့ — မြန်မာစာကို <b>အွန်လိုင်း မြန်မာအသံ</b>နဲ့ အလိုအလျောက် ဖတ်ပေးပါမယ် (အင်တာနက် လိုပါတယ်)။ အောက်မှာ စာရိုက်ပြီး “ဖတ်ပြပါ” နှိပ်ရုံပါပဲ။" +
+            '<div class="btn-row"><button class="btn small" type="button" id="voiceRecheckBtn">အသံစာရင်း ပြန်စစ်မည်</button></div>';
+          const rb = document.getElementById("voiceRecheckBtn");
+          if (rb) rb.addEventListener("click", startVoiceCheck);
+        } else {
+          voiceStatus.className = "voice-status";
+          voiceStatus.textContent = "အသံစာရင်း စစ်နေပါတယ်…";
+        }
+        updateVoiceNote();
+      }
+      function updateVoiceNote() {
+        if (!voiceNote) return;
+        const v = voices.find((x) => x.name === ttsVoiceSel.value);
+        if (v && isMalayVoice(v)) {
+          voiceNote.textContent = "⚠ ရွေးထားတဲ့အသံဟာ မလေး (ms-MY) အသံပါ — မြန်မာ မဟုတ်လို့ မြန်မာစာ အသံထွက် မမှန်ပါ။";
+        } else if (v && isBurmeseVoice(v)) {
+          voiceNote.textContent = "✓ ရွေးထားတာ မြန်မာအသံ (my-MM) ပါ။";
+        } else if (ttsEngineSel && ttsEngineSel.value !== "device") {
+          voiceNote.textContent = "အွန်လိုင်း / အလိုအလျောက် နည်းမှာ အသံရွေးစရာ မလိုပါ — မြန်မာစာကို အွန်လိုင်းအသံနဲ့ ဖတ်ပေးပါမယ်။";
+        } else {
+          voiceNote.textContent = "";
+        }
+      }
+      function loadVoices() {
+        if (!("speechSynthesis" in window)) { updateVoiceStatus(); return; }
+        voices = speechSynthesis.getVoices();
+        ttsVoiceSel.innerHTML = "";
+        if (!voices.length) {
+          ttsVoiceSel.innerHTML = '<option value="">(အသံ မတွေ့ပါ)</option>';
+          updateVoiceStatus();
+          return;
+        }
+        const sorted = voices.slice().sort((a, b) => {
+          const am = isBurmeseVoice(a) ? 0 : 1;
+          const bm = isBurmeseVoice(b) ? 0 : 1;
+          return am - bm;
+        });
+        sorted.forEach((v) => {
+          const o = document.createElement("option");
+          o.value = v.name;
+          let tag = "";
+          if (isBurmeseVoice(v)) tag = " — မြန်မာ";
+          else if (isMalayVoice(v)) tag = " — မလေး (မြန်မာ မဟုတ်ပါ ⚠)";
+          o.textContent = v.name + " (" + v.lang + ")" + tag;
+          ttsVoiceSel.appendChild(o);
+        });
+        updateVoiceStatus();
+      }
+      function startVoiceCheck() {
+        voiceCheckDone = false;
+        if (voicePollTimer) { clearInterval(voicePollTimer); voicePollTimer = null; }
+        loadVoices();
+        if (voices.length) return;
+        const deadline = Date.now() + 5000;
+        voicePollTimer = setInterval(() => {
+          loadVoices();
+          if (voices.length || Date.now() >= deadline) {
+            clearInterval(voicePollTimer); voicePollTimer = null;
+            if (!voices.length) voiceCheckDone = true;
+            updateVoiceStatus();
+          }
+        }, 400);
+      }
+      if ("speechSynthesis" in window) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+        startVoiceCheck();
+      } else {
+        voiceCheckDone = true;
+        updateVoiceStatus();
+      }
+      function syncSliderOut() {
+        ttsPitchOut.textContent = Number(ttsPitch.value).toFixed(2);
+        ttsRateOut.textContent = Number(ttsRate.value).toFixed(2);
+      }
+      ttsPitch.addEventListener("input", syncSliderOut);
+      ttsRate.addEventListener("input", syncSliderOut);
+      syncSliderOut();
+
+      function applyProfileToTts() {
+        hideMsg(ttsMsg);
+        if (!profile) {
+          showMsg(ttsMsg, "ပရိုဖိုင် မရှိသေးပါ။ “အသံဖမ်းရန်” အပိုင်းမှာ အရင် ပရိုဖိုင်လုပ်ပါ။", "err");
+          return;
+        }
+        ttsPitch.value = profile.ttsPitch;
+        syncSliderOut();
+        showMsg(ttsMsg, "ကိုယ့်အသံပရိုဖိုင် (" + Math.round(profile.medianHz||profile.hz) + " Hz) အတိုင်း pitch ညှိပြီးပါပြီ။", "ok");
+      }
+      $("#applyProfileBtn").addEventListener("click", applyProfileToTts);
+      (function(){ const sel=document.getElementById("ttsSavedProfile"); if(sel) sel.addEventListener("change",()=>{ const p=savedProfiles.find(x=>x.id===sel.value); if(!p) return; ttsPitch.value=p.ttsPitch||Math.min(1.9,Math.max(0.55,p.medianHz/118)); syncSliderOut(); showMsg(ttsMsg,"သိမ်းထားသော ပရိုဖိုင် “"+p.name+"” ("+Math.round(p.medianHz)+" Hz) အတိုင်း pitch ညှိပြီးပါပြီ။","ok"); }); })();
+      renderSavedProfiles();
+
+      ttsVoiceSel.addEventListener("change", updateVoiceNote);
+      ttsEngineSel.addEventListener("change", updateVoiceNote);
+
+      /* ---- online Burmese TTS (works even when the phone has no my-MM voice) ----
+         Playback is deliberately plain: each chunk is handed to an Audio
+         element pointed at Google's translate TTS service and the browser
+         is left to stream it for as long as the connection takes. There
+         is NO stall watchdog and NO retry timer — on a connection that
+         pauses for a while, a request that would have succeeded at 20–30 s
+         must not be cancelled at 12 s and restarted from byte zero, which
+         is what the previous retry/skip version did (it never finished a
+         single chunk on the user's network, while this same plain player
+         in his downloaded copy of the app plays fine). The only fallback
+         is on a real media error event: the chunk is then retried against
+         the mirror host / alternate request style. */
+      let onlineAudio = null, onlineQueue = [], onlineIdx = 0, onlinePlaying = false;
+      let onlineRoute = 0;
+      const ONLINE_ROUTES = [
+        (q) => "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=my&q=" + encodeURIComponent(q),
+        (q) => "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=my&q=" + encodeURIComponent(q),
+        (q) => "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=my&q=" + encodeURIComponent(q)
+      ];
+      function hasMyanmarText(t) { return /[\u1000-\u109F]/.test(t); }
+      function chunkText(text, max) {
+        max = max || 170;
+        const raw = String(text).match(/[^။.!?\n]+[။.!?]?/g) || [String(text)];
+        const chunks = [];
+        let cur = "";
+        raw.forEach((s) => {
+          s = s.trim();
+          if (!s) return;
+          while (s.length > max) {
+            if (cur) { chunks.push(cur); cur = ""; }
+            let cut = Math.max(s.lastIndexOf("၊", max), s.lastIndexOf(" ", max));
+            if (cut < 40) cut = max;
+            chunks.push(s.slice(0, cut).trim());
+            s = s.slice(cut).trim();
+          }
+          const joined = (cur ? cur + " " : "") + s;
+          if (joined.length > max) { if (cur) chunks.push(cur); cur = s; }
+          else cur = joined;
+        });
+        if (cur) chunks.push(cur);
+        return chunks.filter(Boolean);
+      }
+      function stopOnline() {
+        onlinePlaying = false; onlineQueue = []; onlineIdx = 0; onlineRoute = 0;
+        if (onlineAudio) {
+          onlineAudio.onended = null; onlineAudio.onerror = null;
+          try { onlineAudio.pause(); } catch (e) {}
+          onlineAudio.removeAttribute("src");
+          onlineAudio = null;
+        }
+      }
+      function onlineFail() {
+        if (!onlinePlaying) return;
+        /* A genuine load error (not a stall — stalls never fire this):
+           try the next route for the same chunk before giving up. */
+        if (onlineRoute + 1 < ONLINE_ROUTES.length) {
+          onlineRoute += 1;
+          showMsg(ttsMsg, "ချိတ်ဆက် မရလို့ နောက်တစ်နည်းနဲ့ ပြန်စမ်းနေပါတယ်… (အပိုင်း " + (onlineIdx + 1) + "/" + onlineQueue.length + ")", "ok");
+          playOnlineChunk();
+          return;
+        }
+        stopOnline();
+        showMsg(ttsMsg, "အွန်လိုင်းအသံ ဖွင့်လို့ မရပါ။ ချိတ်ဆက်မှု ခေတ္တ ရပ်နေတာလည်း ဖြစ်နိုင်ပါတယ် — ခဏစောင့်ပြီး “ဖတ်ပြပါ” ကို ထပ်နှိပ်ပါ။", "err");
+      }
+      function playOnlineNext() {
+        if (!onlinePlaying) return;
+        if (onlineIdx >= onlineQueue.length) {
+          onlinePlaying = false;
+          showMsg(ttsMsg, "ဖတ်ပြပြီးပါပြီ။", "ok");
+          return;
+        }
+        onlineRoute = 0;
+        playOnlineChunk();
+      }
+      function playOnlineChunk() {
+        if (!onlinePlaying) return;
+        if (!onlineAudio) onlineAudio = new Audio();
+        onlineAudio.src = ONLINE_ROUTES[onlineRoute](onlineQueue[onlineIdx]);
+        try { onlineAudio.playbackRate = Number(ttsRate.value); } catch (e) {}
+        onlineAudio.onended = () => { onlineIdx += 1; playOnlineNext(); };
+        onlineAudio.onerror = onlineFail;
+        showMsg(ttsMsg, "အွန်လိုင်း မြန်မာအသံနဲ့ ဖတ်နေပါတယ်… (အပိုင်း " + (onlineIdx + 1) + "/" + onlineQueue.length + ")", "ok");
+        const p = onlineAudio.play();
+        if (p && p.catch) p.catch((err) => {
+          /* A newer load superseding this play() rejects it with
+             AbortError — that is not a failure. Anything else is. */
+          if (err && err.name === "AbortError") return;
+          onlineFail();
+        });
+      }
+      function speakOnline(text) {
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+        stopOnline();
+        onlineQueue = chunkText(text);
+        if (!onlineQueue.length) { showMsg(ttsMsg, "ဖတ်ပြမည့် စာသား အရင် ရိုက်ထည့်ပါ။", "err"); return; }
+        onlineIdx = 0; onlinePlaying = true;
+        playOnlineNext();
+      }
+      function decideEngine(text) {
+        const sel = ttsEngineSel.value;
+        if (sel === "online") return "online";
+        if (sel === "device") return "device";
+        if (hasMyanmarText(text) && !hasBurmeseVoice()) return "online";
+        return "device";
+      }
+
+      $("#speakBtn").addEventListener("click", () => {
+        hideMsg(ttsMsg);
+        const text = $("#ttsText").value.trim();
+        if (!text) { showMsg(ttsMsg, "ဖတ်ပြမည့် စာသား အရင် ရိုက်ထည့်ပါ။", "err"); return; }
+        if (decideEngine(text) === "online") { speakOnline(text); return; }
+        stopOnline();
+        if (!("speechSynthesis" in window)) {
+          showMsg(ttsMsg, "ဒီ browser မှာ ဖုန်းအသံ မရပါ။ “အွန်လိုင်း မြန်မာအသံ” နည်းကို ရွေးပြီး စမ်းကြည့်ပါ။", "err");
+          return;
+        }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const v = voices.find((x) => x.name === ttsVoiceSel.value);
+        if (v) { u.voice = v; u.lang = v.lang; }
+        else if (hasMyanmarText(text)) { u.lang = "my-MM"; }
+        u.pitch = Number(ttsPitch.value);
+        u.rate = Number(ttsRate.value);
+        u.onerror = () => showMsg(ttsMsg, "ဖတ်ပြရာမှာ အဆင်မပြေပါ။ အသံ (voice) တစ်ခု ပြောင်းရွေးပြီး ပြန်စမ်းပါ။", "err");
+        speechSynthesis.speak(u);
+        if (hasMyanmarText(text) && v && !isBurmeseVoice(v)) {
+          showMsg(ttsMsg, "သတိ — ရွေးထားတဲ့အသံဟာ မြန်မာအသံ (my-MM) မဟုတ်လို့ မြန်မာစာ အသံထွက် မမှန်နိုင်ပါ။ “အွန်လိုင်း မြန်မာအသံ” နည်းကို ရွေးသုံးပါ။", "err");
+        }
+      });
+      $("#stopSpeakBtn").addEventListener("click", () => {
+        stopOnline();
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+      });
+
+      /* ================= video dub ================= */
+      const videoFile = $("#videoFile"), dubVideo = $("#dubVideo"), videoWork = $("#videoWork"),
+            dubRecBtn = $("#dubRecBtn"), dubStopBtn = $("#dubStopBtn"), dubTimer = $("#dubTimer"),
+            dubStatus = $("#dubStatus"), dubResult = $("#dubResult"), videoMsg = $("#videoMsg");
+      let dubRecorder = null, dubChunks = [], dubStream = null, dubMicStream = null,
+          dubRAF = null, dubTimerInt = null, dubStartAt = 0, dubAudioCtx = null, dubNodes = [];
+
+      videoFile.addEventListener("change", () => {
+        hideMsg(videoMsg);
+        const f = videoFile.files && videoFile.files[0];
+        if (!f) return;
+        dubVideo.src = URL.createObjectURL(f);
+        dubVideo.controls = true;
+        videoWork.classList.remove("hidden");
+        dubResult.innerHTML = "";
+        dubStatus.textContent = "ဗီဒီယို အဆင်သင့်ဖြစ်ပါပြီ — စဖမ်းရင် ဗီဒီယို အစမှ ပြန်ဖွင့်ပေးပါမယ်";
+      });
+
+      async function startDub() {
+        hideMsg(videoMsg);
+        if (!dubVideo.src) { showMsg(videoMsg, "ဗီဒီယိုဖိုင် အရင် ရွေးပါ။", "err"); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          showMsg(videoMsg, "မိုက်ခရိုဖုန်း အသုံးပြုလို့ မရပါ။", "err"); return;
+        }
+        try {
+          dubMicStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        } catch (e) {
+          showMsg(videoMsg, "မိုက်ခရိုဖုန်း ခွင့်ပြုချက် မရပါ။", "err"); return;
+        }
+        try {
+          dubVideo.pause();
+          dubVideo.currentTime = 0;
+          dubVideo.muted = true;
+          dubVideo.controls = false;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = dubVideo.videoWidth || 640;
+          canvas.height = dubVideo.videoHeight || 360;
+          const c2d = canvas.getContext("2d");
+          const drawFrame = () => {
+            if (!dubVideo.paused && !dubVideo.ended) { try { c2d.drawImage(dubVideo, 0, 0, canvas.width, canvas.height); } catch (e) {} }
+            dubRAF = requestAnimationFrame(drawFrame);
+          };
+          const canvasStream = canvas.captureStream(30);
+
+          dubAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const dest = dubAudioCtx.createMediaStreamDestination();
+          dubNodes = [];
+          const micSrc = dubAudioCtx.createMediaStreamSource(dubMicStream);
+          micSrc.connect(dest); dubNodes.push(micSrc);
+
+          if ($("#keepOrigAudio").checked) {
+            try {
+              let origStream = null;
+              if (dubVideo.captureStream) origStream = dubVideo.captureStream();
+              else if (dubVideo.mozCaptureStream) origStream = dubVideo.mozCaptureStream();
+              if (origStream && origStream.getAudioTracks().length) {
+                const os = dubAudioCtx.createMediaStreamSource(new MediaStream(origStream.getAudioTracks()));
+                const g = dubAudioCtx.createGain(); g.gain.value = 0.25;
+                os.connect(g); g.connect(dest); dubNodes.push(os, g);
+              }
+            } catch (e) { /* original audio mix is best-effort */ }
+          }
+
+          const mixed = new MediaStream();
+          canvasStream.getVideoTracks().forEach((t) => mixed.addTrack(t));
+          dest.stream.getAudioTracks().forEach((t) => mixed.addTrack(t));
+          dubStream = mixed;
+
+          const vmime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"]
+            .find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+          dubChunks = [];
+          dubRecorder = new MediaRecorder(dubStream, vmime ? { mimeType: vmime } : undefined);
+          dubRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) dubChunks.push(ev.data); };
+          dubRecorder.onstop = onDubStop;
+          await dubVideo.play();
+          drawFrame();
+          dubRecorder.start(250);
+          dubStartAt = Date.now();
+          dubTimer.textContent = "00:00";
+          dubTimerInt = setInterval(() => { dubTimer.textContent = fmtTime((Date.now() - dubStartAt) / 1000); }, 250);
+          dubStatus.innerHTML = '<span class="dot"></span>နောက်ခံစကား ဖမ်းနေပါတယ်… ဗီဒီယိုကြည့်ပြီး ပြောပါ';
+          dubRecBtn.disabled = true; dubStopBtn.disabled = false;
+          dubVideo.onended = () => { if (dubRecorder && dubRecorder.state !== "inactive") stopDub(); };
+        } catch (e) {
+          showMsg(videoMsg, "စဖမ်းလို့ မရပါ။ ဗီဒီယိုဖိုင် အမျိုးအစား ပြောင်းစမ်းကြည့်ပါ။", "err");
+          cleanupDub();
+        }
+      }
+
+      function cleanupDub() {
+        if (dubRAF) cancelAnimationFrame(dubRAF);
+        clearInterval(dubTimerInt);
+        if (dubMicStream) dubMicStream.getTracks().forEach((t) => t.stop());
+        if (dubAudioCtx) { try { dubAudioCtx.close(); } catch (e) {} dubAudioCtx = null; }
+        dubVideo.muted = false; dubVideo.controls = true; dubVideo.onended = null;
+        dubRecBtn.disabled = false; dubStopBtn.disabled = true;
+      }
+      function stopDub() { if (dubRecorder && dubRecorder.state !== "inactive") dubRecorder.stop(); }
+      function onDubStop() {
+        const mime = (dubRecorder && dubRecorder.mimeType) || "video/webm";
+        const blob = new Blob(dubChunks, { type: mime });
+        cleanupDub();
+        dubStatus.textContent = "ရောစပ်ပြီးပါပြီ — အောက်မှာ ကြည့်ပြီး ဒေါင်းလုဒ်ဆွဲနိုင်ပါတယ်";
+        const url = URL.createObjectURL(blob);
+        const ext = mime.includes("mp4") ? "mp4" : "webm";
+        dubResult.innerHTML = "";
+        const v = document.createElement("video");
+        v.controls = true; v.src = url; v.style.cssText = "width:100%;border-radius:10px;margin-top:14px;background:#000";
+        const row = document.createElement("div"); row.className = "btn-row";
+        const a = document.createElement("a");
+        a.className = "btn primary"; a.textContent = "⬇ နောက်ခံစကားပါတဲ့ ဗီဒီယို ဒေါင်းလုဒ်ဆွဲမည် (" + Math.max(1, Math.round(blob.size / 1048576 * 10) / 10) + " MB)";
+        a.href = url; a.download = "dubbed-video." + ext;
+        row.appendChild(a);
+        dubResult.appendChild(v); dubResult.appendChild(row);
+      }
+      dubRecBtn.addEventListener("click", startDub);
+      dubStopBtn.addEventListener("click", stopDub);
+
+      /* ================= FX — presets + profile target ================= */
+      const PRESETS = [
+        { id:"original", name:"မူရင်း", pitch:1, formant:1, speed:1, brightness:0, echo:0, radio:false },
+        { id:"deep", name:"နိမ့်သံကြီး", pitch:0.72, formant:0.85, speed:0.95, brightness:-25, echo:0, radio:false },
+        { id:"male", name:"ပုံမှန် ကျား", pitch:0.88, formant:0.93, speed:1, brightness:0, echo:0, radio:false },
+        { id:"female", name:"ပုံမှန် မ", pitch:1.28, formant:1.12, speed:1, brightness:18, echo:0, radio:false },
+        { id:"child", name:"မြင့်သံ / ကလေးသံ", pitch:1.55, formant:1.25, speed:1.08, brightness:32, echo:0, radio:false },
+        { id:"elder", name:"အသက်ကြီးသံ", pitch:0.85, formant:0.95, speed:0.82, brightness:-15, echo:0.08, radio:false },
+        { id:"narrator", name:"ဇာတ်ပြောသံ", pitch:0.82, formant:0.90, speed:0.92, brightness:-10, echo:0.15, radio:false },
+        { id:"radio", name:"ရေဒီယိုသံ", pitch:1, formant:1, speed:1, brightness:10, echo:0.12, radio:true }
+      ];
+      const fxSource = $("#fxSource"), fxPitch = $("#fxPitch"), fxEcho = $("#fxEcho"),
+            fxPitchOut = $("#fxPitchOut"), fxEchoOut = $("#fxEchoOut"), fxMsg = $("#fxMsg"), fxResult = $("#fxResult");
+      const fxFormant = $("#fxFormant"), fxSpeed = $("#fxSpeed"), fxBrightness = $("#fxBrightness");
+      const fxFormantOut = $("#fxFormantOut"), fxSpeedOut = $("#fxSpeedOut"), fxBrightnessOut = $("#fxBrightnessOut");
+      const fxTargetProfile = $("#fxTargetProfile"), fxTargetInfo = $("#fxTargetInfo");
+      let activePresetId = "original";
+      function syncFxOutputs(){
+        if(fxPitchOut) fxPitchOut.textContent = Number(fxPitch.value).toFixed(2)+"×";
+        if(fxFormantOut) fxFormantOut.textContent = Number(fxFormant.value).toFixed(2)+"×";
+        if(fxSpeedOut) fxSpeedOut.textContent = Number(fxSpeed.value).toFixed(2)+"×";
+        if(fxBrightnessOut) fxBrightnessOut.textContent = String(fxBrightness.value);
+        if(fxEchoOut) fxEchoOut.textContent = Math.round(Number(fxEcho.value)*100/0.7)+"%";
+      }
+      function setFxValues(p){
+        fxPitch.value=p.pitch; fxFormant.value=p.formant; fxSpeed.value=p.speed; fxBrightness.value=p.brightness; fxEcho.value=p.echo;
+        const r=document.getElementById("fxRadio"); if(r) r.checked=!!p.radio;
+        syncFxOutputs();
+        $$("#presetGrid .preset-chip").forEach(c=>c.classList.toggle("active", c.dataset.pid===activePresetId));
+      }
+      function renderPresets(){
+        const grid=document.getElementById("presetGrid"); if(!grid) return; grid.innerHTML="";
+        PRESETS.forEach(p=>{ const b=document.createElement("button"); b.type="button"; b.className="preset-chip"+(p.id===activePresetId?" active":""); b.dataset.pid=p.id; b.textContent=p.name; b.addEventListener("click",()=>{ activePresetId=p.id; if(fxTargetProfile) fxTargetProfile.value=""; if(fxTargetInfo) fxTargetInfo.className="target-box"; setFxValues(p); showMsg(fxMsg,"Preset “"+p.name+"” ကို ရွေးထားပါတယ် — Pitch "+p.pitch.toFixed(2)+"×, Formant "+p.formant.toFixed(2)+"×. အောက်က “ပြောင်းပြီး နားထောင်မည်” နှိပ်ပါ။","ok"); }); grid.appendChild(b); });
+      }
+      renderPresets();
+      [fxPitch, fxFormant, fxSpeed, fxBrightness, fxEcho].forEach(el=>{ if(el) el.addEventListener("input", syncFxOutputs); });
+      syncFxOutputs();
+      const resetBtn=document.getElementById("fxResetBtn"); if(resetBtn) resetBtn.addEventListener("click",()=>{ activePresetId="original"; setFxValues(PRESETS[0]); if(fxTargetProfile) fxTargetProfile.value=""; if(fxTargetInfo) fxTargetInfo.className="target-box"; });
+      async function applyTargetProfile(){
+        const pid = fxTargetProfile ? fxTargetProfile.value : "";
+        if(!pid){ if(fxTargetInfo) fxTargetInfo.className="target-box"; return; }
+        const target = savedProfiles.find(x=>x.id===pid); if(!target) return;
+        const srcTake = takes.find(t=>t.id===fxSource.value);
+        let srcMetrics = srcTake && srcTake.metrics ? srcTake.metrics : (profile && srcTake && profile.takeId===srcTake.id ? profile : null);
+        if(!srcMetrics && srcTake){ try{ srcMetrics = await computeMetricsForTake(srcTake); if(srcMetrics) srcTake.metrics=srcMetrics; }catch(e){} }
+        if(!srcMetrics){ if(fxTargetInfo){ fxTargetInfo.className="target-box show"; fxTargetInfo.textContent="မူရင်းအသံရဲ့ pitch ကို အရင် ဆန်းစစ်ဖို့ လိုပါတယ် — “အသံဖမ်းရန်” မှာ အဲဒီအသံကို “ပရိုဖိုင်လုပ်မည်” နှိပ်ပြီးမှ ပြန်လာပါ။ အခုတော့ ပစ်မှတ် pitch ("+Math.round(target.medianHz)+" Hz) ကို 120 Hz baseline နဲ့ ခန့်မှန်း ညှိပေးထားပါတယ်။"; } const pr0=Math.min(2,Math.max(0.5,target.medianHz/120)); fxPitch.value=pr0; fxFormant.value=Math.min(1.4,Math.max(0.7,Math.pow(pr0,0.4))); syncFxOutputs(); return; }
+        const pitchRatio = Math.min(2, Math.max(0.5, target.medianHz / srcMetrics.medianHz));
+        let formantRatio = pitchRatio;
+        if (srcMetrics.formants && target.formants && srcMetrics.formants.f1>0 && target.formants.f1>0){ const r1=target.formants.f1/srcMetrics.formants.f1; const r2=target.formants.f2 && srcMetrics.formants.f2 ? target.formants.f2/srcMetrics.formants.f2 : r1; formantRatio = Math.min(1.4, Math.max(0.7, (r1+r2)/2)); }
+        else formantRatio = Math.min(1.4, Math.max(0.7, Math.pow(pitchRatio,0.5)));
+        const brightDelta = target.centroidHz && srcMetrics.centroidHz ? Math.max(-60, Math.min(60, Math.round((target.centroidHz - srcMetrics.centroidHz)/40))) : 0;
+        fxPitch.value=pitchRatio; fxFormant.value=formantRatio; fxBrightness.value=brightDelta;
+        activePresetId=""; $$("#presetGrid .preset-chip").forEach(c=>c.classList.remove("active"));
+        syncFxOutputs();
+        if(fxTargetInfo){ fxTargetInfo.className="target-box show"; fxTargetInfo.innerHTML="<strong>ပစ်မှတ်: "+target.name+"</strong> — မူရင်း "+Math.round(srcMetrics.medianHz)+" Hz → ပစ်မှတ် "+Math.round(target.medianHz)+" Hz (Pitch ×"+pitchRatio.toFixed(2)+", Formant ×"+formantRatio.toFixed(2)+"). ဒါက အနီးစပ်ဆုံး ပြောင်းလဲမှုပါ၊ အတိအကျ clone မဟုတ်ပါ။"; }
+      }
+      if(fxTargetProfile) fxTargetProfile.addEventListener("change", applyTargetProfile);
+      if(fxSource) fxSource.addEventListener("change", ()=>{ if(fxTargetProfile && fxTargetProfile.value) applyTargetProfile(); });
+      function refreshFxSources() {
+        const cur = fxSource.value;
+        fxSource.innerHTML = "";
+        if (!takes.length) { fxSource.innerHTML = '<option value="">(အသံ မရှိသေးပါ — အရင် ဖမ်းပါ)</option>'; return; }
+        takes.forEach((t) => {
+          const o = document.createElement("option");
+          o.value = t.id; o.textContent = t.name + " (" + fmtTime(t.duration) + ")" + (t.metrics ? " • " + Math.round(t.metrics.medianHz) + " Hz" : "");
+          fxSource.appendChild(o);
+        });
+        if (takes.some((t) => t.id === cur)) fxSource.value = cur;
+      }
+      refreshFxSources();
+
+      function bufferToWav(buffer) {
+        const numCh = Math.min(2, buffer.numberOfChannels);
+        const sr = buffer.sampleRate;
+        const len = buffer.length * numCh * 2 + 44;
+        const ab = new ArrayBuffer(len);
+        const v = new DataView(ab);
+        const wstr = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+        wstr(0, "RIFF"); v.setUint32(4, len - 8, true); wstr(8, "WAVE"); wstr(12, "fmt ");
+        v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, numCh, true);
+        v.setUint32(24, sr, true); v.setUint32(28, sr * numCh * 2, true);
+        v.setUint16(32, numCh * 2, true); v.setUint16(34, 16, true);
+        wstr(36, "data"); v.setUint32(40, len - 44, true);
+        const chans = [];
+        for (let c = 0; c < numCh; c++) chans.push(buffer.getChannelData(c));
+        let off = 44;
+        for (let i = 0; i < buffer.length; i++) {
+          for (let c = 0; c < numCh; c++) {
+            let s = Math.max(-1, Math.min(1, chans[c][i]));
+            v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+            off += 2;
+          }
+        }
+        return new Blob([ab], { type: "audio/wav" });
+      }
+
+      $("#fxRenderBtn").addEventListener("click", async () => {
+        hideMsg(fxMsg);
+        const take = takes.find((t) => t.id === fxSource.value);
+        if (!take) { showMsg(fxMsg, "အရင် အသံတစ်ခု ဖမ်းထားပါ။", "err"); return; }
+        fxResult.innerHTML = '<div class="empty">ပြောင်းနေပါတယ်… (Pitch + Formant + Brightness + Speed)</div>';
+        try {
+          const srcBuf = await getBuffer(take);
+          const pitchR = Number(fxPitch.value);
+          const formantR = Number(fxFormant.value);
+          const speedR = Number(fxSpeed.value);
+          const bright = Number(fxBrightness.value);
+          const effectiveRate = Math.max(0.35, Math.min(2.8, pitchR * speedR));
+          const outLen = Math.ceil(srcBuf.duration / effectiveRate * srcBuf.sampleRate) + Math.ceil(srcBuf.sampleRate * 1.4);
+          const off = new OfflineAudioContext(1, outLen, srcBuf.sampleRate);
+          const src = off.createBufferSource();
+          src.buffer = srcBuf; src.playbackRate.value = effectiveRate;
+          // Formant approximation: peaking filters at shifted formant frequencies.
+          // Base formants from source metrics if available, else typical defaults.
+          const baseF = (take.metrics && take.metrics.formants) ? take.metrics.formants : (profile && profile.formants ? profile.formants : {f1:500,f2:1500,f3:2500});
+          let node = src;
+          const formantFreqs = [baseF.f1||500, baseF.f2||1500, baseF.f3||2500];
+          formantFreqs.forEach((bf, idx) => {
+            const targetF = Math.max(200, Math.min(4000, bf * formantR));
+            const pk = off.createBiquadFilter(); pk.type="peaking"; pk.frequency.value=targetF; pk.Q.value=1.1; pk.gain.value = idx===0 ? 5 : 4;
+            node.connect(pk); node = pk;
+            // gentle cut at original position to emphasise shift (only if shift is noticeable)
+            if (Math.abs(formantR-1) > 0.05) { const cut = off.createBiquadFilter(); cut.type="peaking"; cut.frequency.value=Math.max(200,Math.min(4000,bf)); cut.Q.value=1.4; cut.gain.value=-3; node.connect(cut); node=cut; }
+          });
+          // Brightness: high shelf
+          const shelf = off.createBiquadFilter(); shelf.type="highshelf"; shelf.frequency.value=3200; shelf.gain.value = bright * 0.15;
+          node.connect(shelf); node = shelf;
+          // slight low shelf for warmth when brightness negative
+          if (bright < -5) { const ls = off.createBiquadFilter(); ls.type="lowshelf"; ls.frequency.value=300; ls.gain.value = Math.min(6, -bright*0.06); node.connect(ls); node=ls; }
+          if ($("#fxRadio").checked) {
+            const hp = off.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 400;
+            const lp = off.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+            node.connect(hp); hp.connect(lp); node = lp;
+          }
+          const echoAmt = Number(fxEcho.value);
+          const dry = off.createGain(); dry.gain.value = 1;
+          node.connect(dry); dry.connect(off.destination);
+          if (echoAmt > 0) {
+            const delay = off.createDelay(1); delay.delayTime.value = 0.28;
+            const fb = off.createGain(); fb.gain.value = echoAmt;
+            const wet = off.createGain(); wet.gain.value = Math.min(0.6, echoAmt);
+            node.connect(delay); delay.connect(fb); fb.connect(delay);
+            delay.connect(wet); wet.connect(off.destination);
+          }
+          src.start(0);
+          const rendered = await off.startRendering();
+          const wav = bufferToWav(rendered);
+          const url = URL.createObjectURL(wav);
+          fxResult.innerHTML = "";
+          const info = document.createElement("p"); info.className="field-note";
+          info.textContent = "ပြောင်းပြီးပါပြီ — Pitch ×"+pitchR.toFixed(2)+", Formant ×"+formantR.toFixed(2)+", Speed ×"+speedR.toFixed(2)+", Brightness "+bright+" (အနီးစပ်ဆုံး ပြောင်းလဲမှု၊ neural clone မဟုတ်ပါ)";
+          const audio = document.createElement("audio");
+          audio.controls = true; audio.src = url; audio.style.width = "100%";
+          const row = document.createElement("div"); row.className = "btn-row";
+          const a = document.createElement("a");
+          a.className = "btn primary"; a.textContent = "⬇ WAV ဒေါင်းလုဒ်ဆွဲမည်";
+          a.href = url; a.download = take.name + "-converted.wav";
+          row.appendChild(a);
+          fxResult.appendChild(info); fxResult.appendChild(audio); fxResult.appendChild(row);
+        } catch (e) {
+          fxResult.innerHTML = "";
+          showMsg(fxMsg, "ပြောင်းလို့ မရပါ။ အသံအသစ် ပြန်ဖမ်းပြီး စမ်းကြည့်ပါ။", "err");
+        }
+      });
+    </script>
+  </body>
+</html>
